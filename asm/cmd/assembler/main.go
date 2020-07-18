@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -14,6 +15,8 @@ import (
 type parser struct {
 	scanner scanner
 	out     *os.File
+	tags    map[string]string
+	line    int
 }
 
 func (prs parser) isCorrect(token Token) bool {
@@ -77,6 +80,7 @@ func (prs parser) emitCodeSection() {
 		tisasm.ShowError("Expected code section start memory direction after .code section")
 	}
 	prs.emitMemory(codeMemoryStart)
+	prs.setLineStart(codeMemoryStart.Literal)
 }
 
 func (prs parser) parse() {
@@ -101,9 +105,35 @@ func (prs parser) parseCodeSection() {
 		if token.TokenType != TokenInstruction {
 			tisasm.ShowError(fmt.Sprintf("Expected instruction but have [%s] %s", token.TokenType, token.Literal))
 		}
-		prs.parseInstruction(token)
+		if token.TokenType == TokenTag {
+			prs.defineTag(token.Literal)
+		} else {
+			prs.parseInstruction(token)
+		}
 		token = prs.scanner.Scan()
 	}
+}
+
+func (prs parser) defineTag(tag string) {
+	prs.tags[tag] = fmt.Sprintf("%x", prs.line)
+}
+
+func (prs parser) emitTag(token Token) {
+	if token.TokenType != TokenTag {
+		tisasm.ShowError("Expected tag")
+	}
+	prs.emitMemory(Token{
+		Literal:   prs.tags[token.Literal],
+		TokenType: TokenMemory,
+	})
+}
+
+func (prs parser) setLineStart(memory string) {
+	bytes, err := hex.DecodeString(memory)
+	if err != nil {
+		tisasm.ShowError("Line start invaild")
+	}
+	prs.line = int(binary.LittleEndian.Uint16(bytes))
 }
 
 func (prs parser) parseInstruction(token Token) {
@@ -112,6 +142,13 @@ func (prs parser) parseInstruction(token Token) {
 	case "add":
 		prs.emitBytes(0x00)
 		prs.emitRegister(prs.scanner.Scan())
+	case "movi":
+		prs.emitBytes(0x01)
+		prs.emitRegister(prs.scanner.Scan())
+		prs.emitASCII(prs.scanner.Scan())
+	case "jne":
+		prs.emitBytes(0x02)
+		prs.emitTag(prs.scanner.Scan())
 	default:
 		tisasm.ShowError(fmt.Sprintf("Undefined instruction %s!", instruction))
 	}
@@ -159,6 +196,8 @@ func main() {
 	parser := parser{
 		scanner: scn,
 		out:     outputFile,
+		tags:    make(map[string]string),
+		line:    0,
 	}
 	parser.parse()
 }
