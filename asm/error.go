@@ -10,3 +10,7 @@ func ShowError(msg string) {
 	fmt.Println()
 	os.Exit(1)
 }
+
+func ShowErrorf(format string, replaces ...interface{}) {
+	ShowError(fmt.Sprintf(format, replaces...))
+}

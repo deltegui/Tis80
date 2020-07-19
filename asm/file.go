@@ -1,7 +1,6 @@
 package tisasm
 
 import (
-	"log"
 	"os"
 )
 
@@ -16,7 +15,7 @@ func OpenFile(path string) *os.File {
 func CreateFile(path string) *os.File {
 	file, err := os.Create(path)
 	if err != nil {
-		log.Fatalln(err)
+		ShowErrorf("%s", err)
 	}
 	return file
 }

@@ -25,12 +25,10 @@ func main() {
 	defer file.Close()
 	outputFile := tisasm.CreateFile(generateOutputFile(path))
 	defer outputFile.Close()
-	scn := newScanner(bufio.NewReader(file))
-	parser := parser{
-		scanner: scn,
-		out:     outputFile,
-		tags:    make(map[string]string),
-		line:    0,
-	}
-	parser.parse()
+	scn := tisasm.NewFileScanner(bufio.NewReader(file))
+	tagReader := tisasm.NewTagReader(scn)
+	tags := tagReader.GetTags()
+	file.Seek(0, 0)
+	parser := tisasm.NewParser(scn, outputFile, tags)
+	parser.Parse()
 }
