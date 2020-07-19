@@ -236,7 +236,7 @@ var instructions []Instruction = []Instruction{
 		ParseParams: paramsRegisterJump,
 	},
 	{
-		Literal:     "dsk", // Load disk from memory direction
+		Literal:     "dsk", // Writes disk content into memory direction
 		OpCode:      0x36,
 		TokenSize:   2,
 		MemorySize:  3,
@@ -292,6 +292,13 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+	},
+	{
+		Literal:     "cfg", // Clear flag with number
+		OpCode:      0x47,
+		TokenSize:   2,
+		MemorySize:  2,
+		ParseParams: paramsNumber,
 	},
 
 	// Stack manipulation 0x5
