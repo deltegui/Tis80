@@ -1,5 +1,5 @@
 .data
-$4FFF 10
+$4FFF 255
 $5000 "Hello world"
 
 .code $5050

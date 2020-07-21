@@ -3,6 +3,7 @@ package tisasm
 import "fmt"
 
 type ParseParams func(parser Parser)
+type Diassemble func(dasm Diassembler)
 
 type Instruction struct {
 	Literal     string
@@ -10,6 +11,7 @@ type Instruction struct {
 	TokenSize   int
 	MemorySize  int
 	ParseParams ParseParams
+	Diassemble  Diassemble
 }
 
 func paramsNone(prs Parser) {}
@@ -61,6 +63,63 @@ func paramsNumberRegister(prs Parser) {
 	prs.emitRegister(prs.scanner.Scan())
 }
 
+func diassembleNone(dasm Diassembler) {
+}
+
+func diassembleRegister(dasm Diassembler) {
+	dasm.readRegister()
+}
+
+func diassembleNumber(dasm Diassembler) {
+	dasm.readNumber()
+}
+
+func diassembleJump(dasm Diassembler) {
+	dasm.readMemory()
+}
+
+func diassembleJumpRegister(dasm Diassembler) {
+	dasm.readMemory()
+	fmt.Print(" ")
+	dasm.readRegister()
+}
+
+func diassembleRegisterJump(dasm Diassembler) {
+	dasm.readRegister()
+	fmt.Print(" ")
+	dasm.readMemory()
+}
+
+func diassembleNumberJump(dasm Diassembler) {
+	dasm.readNumber()
+	fmt.Print(" ")
+	dasm.readMemory()
+}
+
+func diassembleMemoryRegister(dasm Diassembler) {
+	dasm.readMemory()
+	fmt.Print(" ")
+	dasm.readRegister()
+}
+
+func diassembleRegisterMemory(dasm Diassembler) {
+	dasm.readRegister()
+	fmt.Print(" ")
+	dasm.readMemory()
+}
+
+func diassembleRegisterRegister(dasm Diassembler) {
+	dasm.readRegister()
+	fmt.Print(" ")
+	dasm.readRegister()
+}
+
+func diassembleNumberRegister(dasm Diassembler) {
+	dasm.readNumber()
+	fmt.Print(" ")
+	dasm.readRegister()
+}
+
 var instructions []Instruction = []Instruction{
 	// Aritmetico-Logicos 0x0 y 0x1
 	{
@@ -69,6 +128,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "addi", // Add integer. acc + INT -> acc
@@ -76,6 +136,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
+		Diassemble:  diassembleNumber,
 	},
 	{
 		Literal:     "sub", // Substract register. acc - Rx -> acc
@@ -83,6 +144,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "subi", // Substract integer. acc - INT -> acc
@@ -90,6 +152,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
+		Diassemble:  diassembleNumber,
 	},
 	{
 		Literal:     "sil", // Shift left. acc << 1 -> acc
@@ -97,6 +160,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "sir", // Sift right. acc >> 1 -> acc
@@ -104,6 +168,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "and",
@@ -111,6 +176,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "or",
@@ -118,6 +184,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "not",
@@ -125,6 +192,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "xor", // eXclusive OR
@@ -132,6 +200,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 
 	// Salto 0x2
@@ -141,6 +210,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "jeq", // Jump equals. If acc == 0, jump to mem
@@ -148,6 +218,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "jne", // Jump not equal. If acc != 0, jump to mem
@@ -155,6 +226,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "jgt", // Jump Greater Than. If acc > 0, jump to mem
@@ -162,6 +234,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "jlt", // Jump Lower Than. If acc < 0, jump to mem
@@ -169,6 +242,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "jfg", // Jump If flag is setted. If Flags[INT], jump to mem
@@ -176,6 +250,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   3,
 		MemorySize:  4,
 		ParseParams: paramsNumberJump,
+		Diassemble:  diassembleNumberJump,
 	},
 
 	// Movimiento 0x3
@@ -185,6 +260,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   3,
 		MemorySize:  4,
 		ParseParams: paramsMemoryRegister,
+		Diassemble:  diassembleMemoryRegister,
 	},
 	{
 		Literal:     "str", // Store register. Rx -> $mem
@@ -192,6 +268,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   3,
 		MemorySize:  4,
 		ParseParams: paramsRegisterMemory,
+		Diassemble:  diassembleRegisterMemory,
 	},
 	{
 		Literal:     "mov", // Move. Rx -> Ry
@@ -199,6 +276,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   3,
 		MemorySize:  3,
 		ParseParams: paramsRegisterRegister,
+		Diassemble:  diassembleRegisterRegister,
 	},
 	{
 		Literal:     "movi", // Move Integer. INT -> Rx
@@ -206,6 +284,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   3,
 		MemorySize:  3,
 		ParseParams: paramsNumberRegister,
+		Diassemble:  diassembleNumberRegister,
 	},
 	{
 		Literal:     "tar", // Translate ACC to Rx. acc -> Rx
@@ -213,6 +292,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "tra", // Translate Rx to ACC. Rx -> ACC
@@ -220,13 +300,15 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "inr", // Read indirection. Reads the byte that points the memory stored in MEM
 		OpCode:      0x36,
 		TokenSize:   2,
-		MemorySize:  3,
+		MemorySize:  4,
 		ParseParams: paramsJumpRegister,
+		Diassemble:  diassembleJumpRegister,
 	},
 	{
 		Literal:     "inw", // Write indirection. Writes the byte that points the memory stored in MEM
@@ -234,6 +316,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsRegisterJump,
+		Diassemble:  diassembleRegisterJump,
 	},
 	{
 		Literal:     "dsk", // Writes disk content into memory direction
@@ -241,6 +324,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 
 	// Llamadas 0x4
@@ -250,6 +334,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
+		Diassemble:  diassembleNumber,
 	},
 	{
 		Literal:     "hlt", // Halt execution
@@ -257,6 +342,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "cll", // Call subrutine that starts from $mem
@@ -264,6 +350,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
+		Diassemble:  diassembleJump,
 	},
 	{
 		Literal:     "crn", // Returns control to calling subrutine
@@ -271,6 +358,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "pmd", // Enable protected mode.
@@ -278,6 +366,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "ein", // Enable interrputions.
@@ -285,6 +374,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "din", // Disable protected mode.
@@ -292,6 +382,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "cfg", // Clear flag with number
@@ -299,6 +390,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
+		Diassemble:  diassembleNumber,
 	},
 
 	// Stack manipulation 0x5
@@ -308,6 +400,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "poa", // Pop to acc.
@@ -315,6 +408,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "psr", // Push register Rx.
@@ -322,6 +416,7 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
 		Literal:     "por", // Pop to register Rx.
@@ -329,14 +424,27 @@ var instructions []Instruction = []Instruction{
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 }
 
 func GetInstruction(str string) (Instruction, error) {
+	return findInstruction(func(ins Instruction) bool {
+		return ins.Literal == str
+	}, "Undefined instruction %s", str)
+}
+
+func GetInstructionUsingOpcode(opcode byte) (Instruction, error) {
+	return findInstruction(func(ins Instruction) bool {
+		return ins.OpCode == opcode
+	}, "Undefined instruction opcode %x", opcode)
+}
+
+func findInstruction(match func(Instruction) bool, msg string, params ...interface{}) (Instruction, error) {
 	for _, ins := range instructions {
-		if ins.Literal == str {
+		if match(ins) {
 			return ins, nil
 		}
 	}
-	return Instruction{"", 0x00, 0, 0, paramsNone}, fmt.Errorf("Undefined instruction %s", str)
+	return Instruction{"", 0x00, 0, 0, paramsNone, diassembleNone}, fmt.Errorf(msg, params...)
 }

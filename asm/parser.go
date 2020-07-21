@@ -45,15 +45,22 @@ func (prs Parser) parseDataSection() {
 		}
 		prs.emitMemory(token)
 		token = prs.scanner.Scan()
-		if !token.IsAnyTypeOf(TokenString, TokenNumber) {
+		switch token.TokenType {
+		case TokenString:
+			prs.emitBytes(0x01)
+			prs.emitASCII(token)
+		case TokenNumber:
+			prs.emitBytes(0x02)
+			prs.emitNumber(token)
+		default:
 			ShowError("Expected number or string after memory address inside data section")
 		}
-		prs.emitASCII(token)
 		token = prs.scanner.Scan()
 	}
 	if !token.IsSection(".code") {
 		ShowError("Expected .code section after .data section")
 	}
+	prs.emitBytes(0x00, 0x00, 0x00)
 	prs.parseCodeSection()
 }
 
@@ -97,7 +104,7 @@ func (prs Parser) emitDataSection() {
 }
 
 func (prs Parser) emitSectionStart() {
-	prs.emitBytes(0xff, 0xfe, 0x00, 0xfe, 0xff)
+	prs.emitBytes(0xff, 0xfe, 0xfe, 0xff)
 }
 
 func (prs Parser) emitASCII(token Token) {
@@ -110,7 +117,15 @@ func (prs Parser) emitNumber(token Token) {
 	if !token.IsType(TokenNumber) {
 		ShowError("Expected token to be number")
 	}
-	prs.emitRegister(token)
+	integer, err := strconv.Atoi(token.Literal)
+	if err != nil {
+		ShowErrorf("Error while decoding as number literal: %s", token.Literal)
+	}
+	if integer >= 256 {
+		ShowError("Integer must be under 256")
+	}
+	b := byte(integer & 0xff)
+	prs.emitBytes(b)
 }
 
 func (prs Parser) emitJumpDest(token Token) {
