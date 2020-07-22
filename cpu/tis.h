@@ -4,21 +4,23 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "rom.h"
+#include "error.h"
 
 typedef struct {
 	uint8_t* bytes;
 	int size;
 } ScreenData;
 
-void init_tis(RomReader reader);
+TisErr init_tis(RomReader reader);
 
 void free_tis();
 
 void print_status();
 
-/*
-bool execute_instruction();
 
+TisErr execute_instruction();
+
+/*
 void dispatch_key_down(int key);
 
 ScreenData* get_screen_data();

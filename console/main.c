@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "../cpu/tis.h"
+#include "../cpu/error.h"
 
 typedef struct {
 	FILE* file;
@@ -58,7 +59,21 @@ int main() {
 		.read = &read_rom,
 		.close = &close_rom,
 	};
-	init_tis(reader);
+	TisErr err = init_tis(reader);
+	if(err != ErrNone) {
+		printf("Error while initializing Tis80: %s. Emitted when reading byte %zu\n", tis_error_string(err), rom.readed);
+		exit(1);
+	}
+	print_status();
+	err = ErrNone;
+	while(err == ErrNone) {
+		err = execute_instruction();
+	}
+	if(err != ErrNone && err != ErrExecEnd) {
+		printf("Error while executing assembler: %s. \n", tis_error_string(err));
+		free_tis();
+		return 1;
+	}
 	print_status();
 	free_tis();
 	return 0;

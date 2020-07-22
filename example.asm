@@ -1,20 +1,7 @@
-.data
-$4FFF 255
-$5000 "Hello world"
-
-.code $5050
-:loop
-	jne stop
-	movi 1 R1
+.code $0200
+	movi 1 R0
+	movi 2 R1
+	tra R0
 	add R1
-	jne loop
-	cll nothing
-
-:stop
+	tar R2
 	hlt
-
-:nothing
-	pmd
-	din
-	ein
-	crn

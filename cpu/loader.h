@@ -2,9 +2,10 @@
 #define tiscpu_loader_h
 
 #include "rom.h"
+#include "error.h"
 
 void init_loader(RomReader reader);
 
-bool load_rom(const char* rom_name);
+TisErr load_rom(const char* rom_name);
 
 #endif

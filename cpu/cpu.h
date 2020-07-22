@@ -2,6 +2,7 @@
 #define tiscpu_cpu_h
 
 #include <stdbool.h>
+#include "error.h"
 
 typedef enum {
 	KEYBOARD_INT,
@@ -11,7 +12,7 @@ void init_cpu();
 
 void free_cpu();
 
-bool execute_instruction();
+TisErr cpu_execute_instruction();
 
 void dispatch_interruption(Interruption interruption);
 

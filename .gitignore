@@ -1,1 +1,4 @@
 build
+.DS_Store
+mem.txt
+*.rom

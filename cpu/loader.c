@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "loader.h"
 #include "cpu.h"
 
@@ -20,38 +21,46 @@ uint16_t read_memory();
 
 typedef struct {
 	RomReader reader;
-	bool success;
+	TisErr error;
 } Loader;
 
 Loader loader;
 
 void init_loader(RomReader reader) {
 	loader.reader = reader;
-	loader.success = true;
+	loader.error = ErrNone;
 }
 
-bool load_rom(const char* rom_name) {
+bool have_error() {
+	return loader.error != ErrNone;
+}
+
+TisErr load_rom(const char* rom_name) {
 	if(!loader.reader.open(rom_name)) {
-		return false;
+		return ErrRomRead;
 	}
 	expect_section_header();
+	if(have_error()) {
+		loader.reader.close();
+		return loader.error;
+	}
 	switch(loader.reader.read()) {
 	case DATA_SECTION:
 		read_data_section();
-		return loader.success;
+		return loader.error;
 	case CODE_SECTION:
 		read_code_section();
-		return loader.success;
+		return loader.error;
 	default:
-		return false;
+		return ErrRomFormat;
 	}
-	return loader.success;
+	loader.reader.close();
+	return ErrNone;
 }
 
 void read_data_section() {
-	data:
 	while(!loader.reader.is_at_end()) {
-		if(!loader.success) {
+		if(have_error()) {
 			return;
 		}
 		uint16_t direction = read_memory();
@@ -61,7 +70,7 @@ void read_data_section() {
 	}
 	expect_section_header();
 	expect_byte(CODE_SECTION);
-	if(!loader.success) {
+	if(have_error()) {
 		return;
 	}
 	read_code_section();
@@ -95,7 +104,7 @@ void read_string(uint16_t direction) {
 void read_code_section() {
 	uint16_t start_code = read_memory();
 	uint16_t offset = 0;
-	while(!loader.reader.is_at_end() && loader.success) {
+	while(!loader.reader.is_at_end()) {
 		uint8_t byte = loader.reader.read();
 		write_byte(start_code+offset, byte);
 		offset++;
@@ -118,5 +127,7 @@ void expect_section_header() {
 }
 
 void expect_byte(uint8_t byte) {
-	loader.success = loader.reader.read() == byte;
+	if(loader.reader.read() != byte) {
+		loader.error = ErrRomFormat;
+	}
 }

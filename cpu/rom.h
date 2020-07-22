@@ -19,6 +19,7 @@ typedef struct {
 	// it return false. Returns true otherwise.
 	bool (*open)(const char* name);
 
+	// Close data stream.
 	void (*close)();
 } RomReader;
 

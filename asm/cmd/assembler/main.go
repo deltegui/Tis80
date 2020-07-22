@@ -16,7 +16,7 @@ func getSourcePath() string {
 }
 
 func generateOutputFile(inputPath string) string {
-	return strings.Replace(inputPath, ".asm", ".bin", 1)
+	return strings.Replace(inputPath, ".asm", ".rom", 1)
 }
 
 func main() {
