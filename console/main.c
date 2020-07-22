@@ -64,7 +64,6 @@ int main() {
 		printf("Error while initializing Tis80: %s. Emitted when reading byte %zu\n", tis_error_string(err), rom.readed);
 		exit(1);
 	}
-	print_status();
 	err = ErrNone;
 	while(err == ErrNone) {
 		err = execute_instruction();

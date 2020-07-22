@@ -1,7 +1,13 @@
 .code $0200
-	movi 1 R0
-	movi 2 R1
+	movi 0 R0
 	tra R0
-	add R1
-	tar R2
+
+:start
+	addi 1
+	jfg 0 end
+	jmp start
+
+:end
+	movi 1 R1
+	cfg 0
 	hlt

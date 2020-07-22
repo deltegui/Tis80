@@ -102,7 +102,7 @@ func (dasm *Diassembler) startLineAnnotation() {
 
 func (dasm Diassembler) emitLineAnnotation() {
 	fmt.Print("$")
-	fmt.Printf("%x\n", dasm.currentLine)
+	fmt.Printf("%04x\n", dasm.currentLine)
 }
 
 func (dasm Diassembler) readSectionFlag() {
