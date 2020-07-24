@@ -26,7 +26,7 @@ $0110 "example.rom"
 	movi 0x0c R12
 	movi 0x0d R13
 	movi 0x0e R14
-	movi 0x0f R15
+	movi 0x0f R16
 	cll $4000
 	movi 3 R3
 	hlt

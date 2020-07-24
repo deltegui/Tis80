@@ -124,7 +124,7 @@ var instructions []Instruction = []Instruction{
 	// Aritmetico-Logicos 0x0 y 0x1
 	{
 		Literal:     "add", // Add register. acc + Rx -> acc
-		OpCode:      0x00,
+		OpCode:      0x01,
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
@@ -132,7 +132,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "addi", // Add integer. acc + INT -> acc
-		OpCode:      0x01,
+		OpCode:      0x02,
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
@@ -140,7 +140,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "sub", // Substract register. acc - Rx -> acc
-		OpCode:      0x02,
+		OpCode:      0x03,
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,
@@ -148,7 +148,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "subi", // Substract integer. acc - INT -> acc
-		OpCode:      0x03,
+		OpCode:      0x04,
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsNumber,
@@ -156,14 +156,6 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "sil", // Shift left. acc << 1 -> acc
-		OpCode:      0x04,
-		TokenSize:   1,
-		MemorySize:  1,
-		ParseParams: paramsNone,
-		Diassemble:  diassembleNone,
-	},
-	{
-		Literal:     "sir", // Sift right. acc >> 1 -> acc
 		OpCode:      0x05,
 		TokenSize:   1,
 		MemorySize:  1,
@@ -171,15 +163,15 @@ var instructions []Instruction = []Instruction{
 		Diassemble:  diassembleNone,
 	},
 	{
-		Literal:     "and",
+		Literal:     "sir", // Sift right. acc >> 1 -> acc
 		OpCode:      0x06,
-		TokenSize:   2,
-		MemorySize:  2,
-		ParseParams: paramsRegister,
-		Diassemble:  diassembleRegister,
+		TokenSize:   1,
+		MemorySize:  1,
+		ParseParams: paramsNone,
+		Diassemble:  diassembleNone,
 	},
 	{
-		Literal:     "or",
+		Literal:     "and",
 		OpCode:      0x07,
 		TokenSize:   2,
 		MemorySize:  2,
@@ -187,8 +179,16 @@ var instructions []Instruction = []Instruction{
 		Diassemble:  diassembleRegister,
 	},
 	{
-		Literal:     "not",
+		Literal:     "or",
 		OpCode:      0x08,
+		TokenSize:   2,
+		MemorySize:  2,
+		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
+	},
+	{
+		Literal:     "not",
+		OpCode:      0x09,
 		TokenSize:   1,
 		MemorySize:  1,
 		ParseParams: paramsNone,
@@ -196,7 +196,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "xor", // eXclusive OR
-		OpCode:      0x09,
+		OpCode:      0x0a,
 		TokenSize:   2,
 		MemorySize:  2,
 		ParseParams: paramsRegister,

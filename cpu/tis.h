@@ -12,11 +12,9 @@ typedef struct {
 } ScreenData;
 
 TisErr init_tis(RomReader reader);
-
 void free_tis();
 
 void print_status();
-
 
 TisErr execute_instruction();
 

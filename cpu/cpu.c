@@ -25,16 +25,16 @@
 #define FLAG_STACK_OVERFLOW 1
 #define FLAG_IO_ERROR 		2
 
-#define OP_ADD	0x00
-#define OP_ADDI 0x01
-#define OP_SUB	0x02
-#define OP_SUBI 0x03
-#define OP_SIL	0x04
-#define OP_SIR	0x05
-#define OP_AND	0x06
-#define OP_OR	0x07
-#define OP_XOR	0x08
-#define OP_NOT	0x09
+#define OP_ADD	0x01
+#define OP_ADDI 0x02
+#define OP_SUB	0x03
+#define OP_SUBI 0x04
+#define OP_SIL	0x05
+#define OP_SIR	0x06
+#define OP_AND	0x07
+#define OP_OR	0x08
+#define OP_XOR	0x09
+#define OP_NOT	0x0a
 #define OP_JMP	0x20
 #define OP_JEQ	0x21
 #define OP_JNE	0x22
