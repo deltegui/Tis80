@@ -5,6 +5,9 @@
 #include "error.h"
 
 typedef enum {
+	ACC_OVERFLOW_INT,
+	STACK_OVERFLOW_INT,
+	IO_ERROR_INT,
 	KEYBOARD_INT,
 } Interruption;
 

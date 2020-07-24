@@ -50,6 +50,7 @@ uint8_t read_rom() {
 
 void close_rom() {
 	fclose(rom.file);
+	init_rom();
 }
 
 int main() {

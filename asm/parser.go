@@ -127,6 +127,9 @@ func (prs Parser) emitNumber(token Token) {
 	if err != nil {
 		ShowErrorTokenf(token, "Expected register number, got %s", token)
 	}
+	if integer >= 256 {
+		ShowErrorToken(token, "Integer must be under 256")
+	}
 	fixed := fmt.Sprintf("%02x", integer)
 	prs.emitHex(fixed, 1)
 }
@@ -175,10 +178,10 @@ func (prs Parser) emitMemory(token Token) {
 func (prs Parser) emitHex(literal string, length int) {
 	address, err := hex.DecodeString(literal)
 	if err != nil {
-		ShowErrorf("Error while decoding as hexadecimal literal in emitHex: %s, %s", literal, err)
+		ShowErrorf("Error while decoding as hexadecimal literal in emitHex: %s (%s). Maybe hexadecimal have odd length?", err, literal)
 	}
 	if len(address) != length {
-		ShowErrorf("Expected hexadecimal to be %d length", length)
+		ShowErrorf("Expected hexadecimal to be %d length, have %d with literal %s\n", length, len(address), literal)
 	}
 	prs.emitBytes(address...)
 }

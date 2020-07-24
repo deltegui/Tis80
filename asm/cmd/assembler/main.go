@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -31,6 +32,7 @@ func main() {
 	defer outputFile.Close()
 	tagReader := tisasm.NewTagReader(scannerFromFile(file))
 	tags := tagReader.GetTags()
+	fmt.Println(tags)
 	file.Seek(0, 0)
 	parser := tisasm.NewParser(scannerFromFile(file), outputFile, tags)
 	parser.Parse()

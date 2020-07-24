@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cpu.h"
+#include "loader.h"
+#include "error.h"
 
 #define UINT8_COUNT (UINT8_MAX + 1) 
 
@@ -16,6 +18,12 @@
 #define INIT_VID_MEM			0x3000
 #define INIT_KEYBOARD_BUFFER	0x4000
 #define INIT_RAM 				0x4100
+
+#define FLAG_COUNT 3
+
+#define FLAG_ACC_OVERFLOW 	0
+#define FLAG_STACK_OVERFLOW 1
+#define FLAG_IO_ERROR 		2
 
 #define OP_ADD	0x00
 #define OP_ADDI 0x01
@@ -55,30 +63,34 @@
 #define OP_PSR	0x52
 #define OP_POR	0x53
 
+static void set_flag(uint8_t code);
+static void call_subrutine(uint16_t direction);
+static uint16_t read_memory_from(uint16_t direction);
+
 typedef struct {
 	uint8_t* memory;
 	uint8_t registers[REGISTER_MAX + 1];
 	uint8_t acc;
 	uint8_t* pc;
 	uint8_t* stack_top;
+	bool flags[FLAG_COUNT];
 	bool halt;
-	bool overflow_flag;
 	bool protected_mode;
 	bool enabled_interruptions;
-	bool stack_overflow;
 } Cpu;
 
 Cpu cpu;
 
 void init_cpu() {
-	cpu.memory = malloc(sizeof(uint8_t)*MEMORY_LENGTH);
+	cpu.memory = (uint8_t*)malloc(sizeof(uint8_t)*MEMORY_LENGTH);
 	cpu.pc = cpu.memory + INIT_KERNAL_ROM;
 	cpu.stack_top = cpu.memory + INIT_STACK;
 	cpu.halt = false;
-	cpu.overflow_flag = false;
-	cpu.stack_overflow = false;
 	cpu.protected_mode = false;
 	cpu.enabled_interruptions = true;
+	for(int i = 0; i < FLAG_COUNT; i++) {
+		cpu.flags[i] = false;
+	}
 }
 
 void free_cpu() {
@@ -89,6 +101,12 @@ void dispatch_interruption(Interruption interruption) {
 	if(!cpu.enabled_interruptions) {
 		return;
 	}
+	uint16_t dir_int = (uint16_t)interruption * 2;
+	uint16_t dir = read_memory_from(dir_int);
+	if(dir == 0x0000) {
+		return;
+	}
+	call_subrutine(dir);
 }
 
 void write_byte(uint16_t direction, uint8_t data) {
@@ -102,7 +120,7 @@ uint8_t read_byte(uint16_t direction) {
 static void stack_push(uint8_t value) {
 	uint16_t next_pos = (uint16_t)cpu.stack_top + 1;
 	if(next_pos >= INIT_KERNAL_ROM) {
-		cpu.stack_overflow = true;
+		set_flag(FLAG_STACK_OVERFLOW);
 		return;
 	}
 	*cpu.stack_top = value;
@@ -110,11 +128,11 @@ static void stack_push(uint8_t value) {
 }
 
 static uint8_t stack_pop() {
-	uint8_t value = *cpu.stack_top;
 	uint16_t current_pos = (uint16_t)cpu.stack_top;
 	if(current_pos > INIT_STACK) {
 		cpu.stack_top--;
 	}
+	uint8_t value = *cpu.stack_top;
 	return value;
 
 }
@@ -135,15 +153,20 @@ static uint8_t get_register(uint8_t r) {
 }
 
 static bool is_pc_out_bounds() {
-	return cpu.pc < cpu.memory || cpu.pc > (cpu.memory + MEMORY_LENGTH);
+	return cpu.pc < cpu.memory || cpu.pc >= (cpu.memory + MEMORY_LENGTH);
 }
 
 static uint8_t read_pc() {
 	if(is_pc_out_bounds()) {
 		return 0x00;
 	}
-	printf("Reading direction %04x, value %02x\n", cpu.pc - cpu.memory, *cpu.pc);
+	printf("Reading direction %04lx, value %02x\n", cpu.pc - cpu.memory, *cpu.pc);
 	return *cpu.pc++;
+}
+
+static char* read_string(uint16_t direction) {
+	printf("Reading string from %04lx: %s\n", direction, (char*)(cpu.memory + direction));
+	return (char*)(cpu.memory + direction);
 }
 
 static uint16_t to_direction(uint8_t byte_high, uint8_t byte_low) {
@@ -154,21 +177,28 @@ static uint16_t to_direction(uint8_t byte_high, uint8_t byte_low) {
 	return high + low;
 }
 
+static void from_direction(uint16_t direction, uint8_t* high, uint8_t* low) {
+	*high = (direction >> 8) & 0x00ff;
+	*low = direction & 0x00ff;
+}
+
 static uint16_t read_memory() {
 	return to_direction(read_pc(), read_pc());
 }
 
-static uint8_t read_indirection(uint16_t direction) {
+static uint16_t read_memory_from(uint16_t direction) {
 	uint8_t high = cpu.memory[direction];
 	uint8_t low = cpu.memory[direction + 1];
-	uint16_t indirection = to_direction(high, low);
+	return to_direction(high, low);
+}
+
+static uint8_t read_indirection(uint16_t direction) {
+	uint16_t indirection = read_memory_from(direction);
 	return cpu.memory[indirection];
 }
 
 static void write_indirection(uint16_t direction, uint8_t data) {
-	uint8_t high = cpu.memory[direction];
-	uint8_t low = cpu.memory[direction + 1];
-	uint16_t indirection = to_direction(high, low);
+	uint16_t indirection = read_memory_from(direction);
 	cpu.memory[indirection] = data;
 }
 
@@ -176,11 +206,36 @@ static void jump_to(uint16_t direction) {
 	cpu.pc = cpu.memory + direction;
 }
 
+static void call_subrutine(uint16_t direction) {
+	uint8_t high, low;
+	from_direction(cpu.pc - cpu.memory, &high, &low);
+	stack_push(high);
+	stack_push(low);
+	stack_push(cpu.acc);
+	for(int i = REGISTER_MIN; i <= REGISTER_MAX; i++) {
+		stack_push(cpu.registers[i]);
+	}
+	jump_to(direction);
+}
+
+static void return_callee() {
+	for(int i = REGISTER_MAX; i >= REGISTER_MIN; i--) {
+		cpu.registers[i] = stack_pop();
+	}
+	cpu.acc = stack_pop();
+	uint8_t low = stack_pop();
+	uint8_t high = stack_pop();
+	uint16_t destiny = to_direction(high, low);
+	jump_to(destiny);
+}
+
 static void alu_add(uint8_t number) {
 	int result = cpu.acc + number;
 	printf("SUMA %x\n", result);
 	if(result >= UINT8_COUNT) {
-		cpu.overflow_flag = true;
+		set_flag(FLAG_ACC_OVERFLOW);
+		cpu.acc = 0;
+		return;
 	}
 	cpu.acc = (uint8_t)result;
 }
@@ -188,7 +243,9 @@ static void alu_add(uint8_t number) {
 static void alu_sub(uint8_t number) {
 	int result = cpu.acc - number;
 	if(result < 0) {
-		cpu.overflow_flag = true;
+		set_flag(FLAG_ACC_OVERFLOW);
+		cpu.acc = 0;
+		return;
 	}
 	cpu.acc = (uint8_t)result;
 }
@@ -217,26 +274,33 @@ static void alu_xor(uint8_t number) {
 	cpu.acc = cpu.acc ^ number;
 }
 
-static bool is_flag_setted_from_code(uint8_t code) {
+static void set_flag(uint8_t code) {
+	if(code >= 0 && code < FLAG_COUNT) {
+		cpu.flags[code] = true;
+	}
 	switch(code) {
-	case 0:
-		return cpu.overflow_flag;
-	case 1:
-		return cpu.stack_overflow;
-	default:
-		return false;
+	case FLAG_IO_ERROR: 
+		dispatch_interruption(IO_ERROR_INT);
+		break;
+	case FLAG_STACK_OVERFLOW:
+		dispatch_interruption(STACK_OVERFLOW_INT);
+		break;
+	case FLAG_ACC_OVERFLOW:
+		dispatch_interruption(ACC_OVERFLOW_INT);
+		break;
 	}
 }
 
-static void clear_flag_from_code(uint8_t code) {
-#define DISABLE_FLAG(flag) cpu.flag = false; break
-	switch(code) {
-	case 0: {
-		DISABLE_FLAG(overflow_flag);
-	}	
-	case 1: {
-		DISABLE_FLAG(stack_overflow);
+static bool is_flag_setted_from_code(uint8_t code) {
+	if(code >= 0 && code < FLAG_COUNT) {
+		return cpu.flags[code];
 	}
+	return false;
+}
+
+static void clear_flag_from_code(uint8_t code) {
+	if(code >= 0 && code < FLAG_COUNT) {
+		cpu.flags[code] = false;
 	}
 }
 
@@ -251,8 +315,9 @@ void print_cpu_status() {
 	printf("\n");
 	printf("Protected Mode: %d\n", cpu.protected_mode);
 	printf("Enabled Interruptions: %d\n", cpu.enabled_interruptions);
-	printf("Overflow: %d\n", cpu.overflow_flag);
-	printf("Stack Overflow: %d\n", cpu.stack_overflow);
+	printf("Overflow: %d\n", cpu.flags[FLAG_ACC_OVERFLOW]);
+	printf("Stack Overflow: %d\n", cpu.flags[FLAG_STACK_OVERFLOW]);
+	printf("IO error: %d\n", cpu.flags[FLAG_IO_ERROR]);
 	printf("\n");
 	printf("\n");
 	for(int i = 0; i < MEMORY_LENGTH; i++) {
@@ -278,6 +343,7 @@ inline TisErr cpu_execute_instruction() {
 	if(is_pc_out_bounds()) {
 		return ErrMemOutBounds;
 	}
+
 	switch(read_pc()) {
 	case OP_ADD: {
 		alu_add(READ_REG());
@@ -416,10 +482,31 @@ inline TisErr cpu_execute_instruction() {
 		printf("[INW]\n");
 		break;
 	}
+	case OP_DSK: {
+		uint16_t name_direction = read_memory();
+		char* name = read_string(name_direction);
+		printf("Name: %s\n", name);
+		TisErr err = load_rom(name);
+		if(err != ErrNone) {
+			set_flag(FLAG_IO_ERROR);
+		}
+		printf("[DSK]\n");
+		break;
+	}
+	case OP_CLL: {
+		call_subrutine(read_memory());
+		printf("[CLL]\n");
+		break;
+	}
+	case OP_CRN: {
+		return_callee();
+		printf("[CRN]\n");
+		break;
+	}
 	case OP_INT: {
-		uint8_t interruption = read_pc();
-		dispatch_interruption(interruption);
+		Interruption interruption = (Interruption)read_pc();
 		printf("[INT]\n");
+		dispatch_interruption(interruption);
 		break;
 	}
 	case OP_HLT:

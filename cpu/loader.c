@@ -47,15 +47,14 @@ TisErr load_rom(const char* rom_name) {
 	switch(loader.reader.read()) {
 	case DATA_SECTION:
 		read_data_section();
-		return loader.error;
 	case CODE_SECTION:
 		read_code_section();
-		return loader.error;
 	default:
-		return ErrRomFormat;
+		loader.error = ErrRomFormat;
 	}
 	loader.reader.close();
-	return ErrNone;
+	init_loader(loader.reader);
+	return loader.error;
 }
 
 static void read_data_section() {
