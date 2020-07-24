@@ -10,23 +10,27 @@ type FileScanner struct {
 	reader     *bufio.Reader
 	word       []rune
 	lastReaded rune
+	line       int
 }
 
-func NewFileScanner(reader *bufio.Reader) FileScanner {
-	return FileScanner{reader, []rune{}, ' '}
+func NewFileScanner(reader *bufio.Reader) *FileScanner {
+	return &FileScanner{reader, []rune{}, ' ', 1}
 }
 
-func (scn FileScanner) skipWhitespaces() {
+func (scn *FileScanner) skipWhitespaces() {
 	for {
 		if scn.isAtEnd() {
 			return
 		}
-		c := scn.current()
-		if c == '\t' || c == '\r' || c == ' ' || c == '\n' {
+		switch scn.current() {
+		case '\t', '\r', ' ':
 			scn.consume()
-		} else if c == ';' {
+		case '\n':
+			scn.line++
+			scn.consume()
+		case ';':
 			scn.consumeUntil('\n')
-		} else {
+		default:
 			return
 		}
 	}
@@ -56,7 +60,7 @@ func (scn FileScanner) skip() rune {
 
 func (scn FileScanner) skipExpected(expected rune, msg string) {
 	if expected != scn.skip() {
-		ShowError(msg)
+		ShowErrorf("%s at line %d", msg, scn.line)
 	}
 }
 
@@ -70,6 +74,17 @@ func (scn FileScanner) current() rune {
 
 func (scn FileScanner) isNumeric() bool {
 	return !scn.isAtEnd() && unicode.IsDigit(scn.current())
+}
+
+func (scn FileScanner) isHex() bool {
+	c := scn.current()
+	return scn.isNumeric() ||
+		c == 'A' || c == 'a' ||
+		c == 'B' || c == 'b' ||
+		c == 'C' || c == 'c' ||
+		c == 'D' || c == 'd' ||
+		c == 'E' || c == 'e' ||
+		c == 'F' || c == 'f'
 }
 
 func (scn FileScanner) isLetter() bool {
@@ -90,6 +105,22 @@ func (scn FileScanner) isRegister() bool {
 }
 
 func (scn FileScanner) scanNumber() Token {
+	if scn.current() != '0' {
+		return scn.scanDecimal()
+	}
+	scn.skip()
+	scn.skipExpected('x', "Numbers which starts with '0' must be hexadecimal. 'x' charater expected after 0.")
+	return scn.scanHexadecimal()
+}
+
+func (scn FileScanner) scanHexadecimal() Token {
+	for scn.isHex() {
+		scn.consume()
+	}
+	return scn.createToken(TokenHex)
+}
+
+func (scn FileScanner) scanDecimal() Token {
 	for scn.isNumeric() {
 		scn.consume()
 	}
@@ -150,7 +181,7 @@ func (scn FileScanner) scanDirection() Token {
 func (scn FileScanner) scanCharacter() Token {
 	scn.skipExpected('\'', "Expected ''' at start of character")
 	scn.consume()
-	scn.skipExpected('"', "Expected '\"' at end of string")
+	scn.skipExpected('\'', "Expected ''' at end of character")
 	return scn.createToken(TokenChar)
 }
 
@@ -160,6 +191,9 @@ func (scn FileScanner) scanRegister() Token {
 		ShowError("Expected register to start with 'R' or 'r'")
 	}
 	scn.consume()
+	if scn.current() != '\n' && scn.current() != ' ' {
+		scn.consume()
+	}
 	return scn.createToken(TokenRegister)
 }
 
@@ -175,6 +209,7 @@ func (scn FileScanner) createToken(tokenType TokenType) Token {
 	return Token{
 		TokenType: tokenType,
 		Literal:   string(scn.word),
+		Line:      scn.line,
 	}
 }
 
@@ -185,7 +220,7 @@ func (scn FileScanner) createError(msg string) Token {
 	}
 }
 
-func (scn FileScanner) Scan() Token {
+func (scn *FileScanner) Scan() Token {
 	scn.skipWhitespaces()
 	if scn.isAtEnd() {
 		return scn.createToken(TokenEof)

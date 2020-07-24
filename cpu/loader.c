@@ -11,13 +11,13 @@
 
 #define END_STRING 0x00
 
-void expect_section_header();
-void expect_byte(uint8_t byte);
-void read_data_section();
-void read_code_section();
-void read_string(uint16_t direction);
-bool read_data_type(uint16_t direction);
-uint16_t read_memory();
+static void expect_section_header();
+static void expect_byte(uint8_t byte);
+static void read_data_section();
+static void read_code_section();
+static void read_string(uint16_t direction);
+static bool read_data_type(uint16_t direction);
+static uint16_t read_memory();
 
 typedef struct {
 	RomReader reader;
@@ -31,7 +31,7 @@ void init_loader(RomReader reader) {
 	loader.error = ErrNone;
 }
 
-bool have_error() {
+static bool have_error() {
 	return loader.error != ErrNone;
 }
 
@@ -58,7 +58,7 @@ TisErr load_rom(const char* rom_name) {
 	return ErrNone;
 }
 
-void read_data_section() {
+static void read_data_section() {
 	while(!loader.reader.is_at_end()) {
 		if(have_error()) {
 			return;
@@ -76,7 +76,7 @@ void read_data_section() {
 	read_code_section();
 }
 
-bool read_data_type(uint16_t direction) {
+static bool read_data_type(uint16_t direction) {
 	switch(loader.reader.read()) {
 	case END_DATA_TYPE:
 		return false;
@@ -91,7 +91,7 @@ bool read_data_type(uint16_t direction) {
 	}
 }
 
-void read_string(uint16_t direction) {
+static void read_string(uint16_t direction) {
 	uint8_t current_byte = loader.reader.read();
 	uint16_t current_dir = direction;
 	while(current_byte != END_STRING && !loader.reader.is_at_end()) {
@@ -101,7 +101,7 @@ void read_string(uint16_t direction) {
 	}
 }
 
-void read_code_section() {
+static void read_code_section() {
 	uint16_t start_code = read_memory();
 	uint16_t offset = 0;
 	while(!loader.reader.is_at_end()) {
@@ -111,7 +111,7 @@ void read_code_section() {
 	}
 }
 
-uint16_t read_memory() {
+static uint16_t read_memory() {
 	uint16_t high = (uint16_t)loader.reader.read();
 	uint16_t low = (uint16_t)loader.reader.read();
 	high = (high << 8) & 0xff00;
@@ -119,14 +119,14 @@ uint16_t read_memory() {
 	return high + low;
 }
 
-void expect_section_header() {
+static void expect_section_header() {
 	expect_byte(0xff);
 	expect_byte(0xfe);
 	expect_byte(0xfe);
 	expect_byte(0xff);
 }
 
-void expect_byte(uint8_t byte) {
+static void expect_byte(uint8_t byte) {
 	if(loader.reader.read() != byte) {
 		loader.error = ErrRomFormat;
 	}

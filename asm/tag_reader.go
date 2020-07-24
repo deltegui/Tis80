@@ -40,19 +40,27 @@ func (reader tagReader) readTags() {
 	}
 	for token.IsCorrect() && reader.isInCodeSection {
 		size := reader.processToken(token)
+		reader.checkMemoryLimit()
 		reader.scn.Advance(size - 1)
 		token = reader.scn.Scan()
 	}
 }
 
+func (reader tagReader) checkMemoryLimit() {
+	position := reader.codeStart + reader.line
+	if position > MemoryLimit {
+		ShowError("Memory limit exceed.")
+	}
+}
+
 func (reader *tagReader) setCodeStart(token Token) {
 	if !token.IsType(TokenMemory) {
-		ShowError("Expected code start to be a memory direction")
+		ShowErrorToken(token, "Expected code start to be a memory direction")
 	}
 	memory := token.Literal
 	bytes, err := hex.DecodeString(memory)
 	if err != nil {
-		ShowError("Invalid memory format")
+		ShowErrorToken(token, "Invalid memory format")
 	}
 	reader.codeStart = int(binary.BigEndian.Uint16(bytes))
 }

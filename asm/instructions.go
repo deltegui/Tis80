@@ -312,7 +312,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "inw", // Write indirection. Writes the byte that points the memory stored in MEM
-		OpCode:      0x35,
+		OpCode:      0x37,
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsRegisterJump,
@@ -320,7 +320,7 @@ var instructions []Instruction = []Instruction{
 	},
 	{
 		Literal:     "dsk", // Writes disk content into memory direction
-		OpCode:      0x36,
+		OpCode:      0x38,
 		TokenSize:   2,
 		MemorySize:  3,
 		ParseParams: paramsJump,
@@ -413,18 +413,18 @@ var instructions []Instruction = []Instruction{
 	{
 		Literal:     "psr", // Push register Rx.
 		OpCode:      0x52,
-		TokenSize:   1,
-		MemorySize:  1,
-		ParseParams: paramsNone,
-		Diassemble:  diassembleNone,
+		TokenSize:   2,
+		MemorySize:  2,
+		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 	{
 		Literal:     "por", // Pop to register Rx.
 		OpCode:      0x53,
-		TokenSize:   1,
-		MemorySize:  1,
-		ParseParams: paramsNone,
-		Diassemble:  diassembleNone,
+		TokenSize:   2,
+		MemorySize:  2,
+		ParseParams: paramsRegister,
+		Diassemble:  diassembleRegister,
 	},
 }
 

@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+const MemoryLimit int = 65536
+
 type Parser struct {
 	scanner Scanner
 	out     *os.File
@@ -24,7 +26,7 @@ func NewParser(scanner Scanner, out *os.File, tags map[string]string) Parser {
 func (prs Parser) Parse() {
 	token := prs.scanner.Scan()
 	if token.TokenType != TokenSection {
-		ShowError("Expected start of section in top of file")
+		ShowErrorToken(token, "Expected start of section in top of file")
 	}
 	switch token.Literal {
 	case ".data":
@@ -32,7 +34,7 @@ func (prs Parser) Parse() {
 	case ".code":
 		prs.parseCodeSection()
 	default:
-		ShowErrorf("Unknown section %s in top of file", token.Literal)
+		ShowErrorTokenf(token, "Unknown section %s in top of file", token.Literal)
 	}
 }
 
@@ -41,24 +43,24 @@ func (prs Parser) parseDataSection() {
 	token := prs.scanner.Scan()
 	for token.IsCorrect() && !token.IsType(TokenSection) {
 		if !token.IsType(TokenMemory) {
-			ShowError("Expected memory address inside data section")
+			ShowErrorToken(token, "Expected memory address inside data section")
 		}
 		prs.emitMemory(token)
 		token = prs.scanner.Scan()
 		switch token.TokenType {
-		case TokenString:
+		case TokenString, TokenChar:
 			prs.emitBytes(0x01)
 			prs.emitASCII(token)
-		case TokenNumber:
+		case TokenNumber, TokenHex:
 			prs.emitBytes(0x02)
 			prs.emitNumber(token)
 		default:
-			ShowError("Expected number or string after memory address inside data section")
+			ShowErrorToken(token, "Expected number or string after memory address inside data section")
 		}
 		token = prs.scanner.Scan()
 	}
 	if !token.IsSection(".code") {
-		ShowError("Expected .code section after .data section")
+		ShowErrorToken(token, "Expected .code section after .data section")
 	}
 	prs.emitBytes(0x00, 0x00, 0x00)
 	prs.parseCodeSection()
@@ -73,12 +75,12 @@ func (prs Parser) parseCodeSection() {
 		case TokenInstruction:
 			prs.parseInstruction(token)
 		default:
-			ShowErrorf("Expected instruction but have %s", token)
+			ShowErrorTokenf(token, "Expected instruction but have %s", token)
 		}
 		token = prs.scanner.Scan()
 	}
 	if token.IsType(TokenError) {
-		ShowErrorf("Error while reading section code %s", token)
+		ShowErrorTokenf(token, "Error while reading section code %s", token)
 	}
 }
 
@@ -114,18 +116,19 @@ func (prs Parser) emitASCII(token Token) {
 }
 
 func (prs Parser) emitNumber(token Token) {
+	if token.IsType(TokenHex) {
+		prs.emitHex(token.Literal, 1)
+		return
+	}
 	if !token.IsType(TokenNumber) {
-		ShowError("Expected token to be number")
+		ShowErrorToken(token, "Expected token to be number")
 	}
 	integer, err := strconv.Atoi(token.Literal)
 	if err != nil {
-		ShowErrorf("Error while decoding as number literal: %s", token.Literal)
+		ShowErrorTokenf(token, "Expected register number, got %s", token)
 	}
-	if integer >= 256 {
-		ShowError("Integer must be under 256")
-	}
-	b := byte(integer & 0xff)
-	prs.emitBytes(b)
+	fixed := fmt.Sprintf("%02x", integer)
+	prs.emitHex(fixed, 1)
 }
 
 func (prs Parser) emitJumpDest(token Token) {
@@ -135,17 +138,17 @@ func (prs Parser) emitJumpDest(token Token) {
 	case TokenInstruction:
 		prs.emitTag(token)
 	default:
-		ShowError("Expected jump destination to be a tag or memory address")
+		ShowErrorToken(token, "Expected jump destination to be a tag or memory address")
 	}
 }
 
 func (prs Parser) emitTag(token Token) {
 	if token.TokenType != TokenInstruction {
-		ShowError("Expected tag")
+		ShowErrorToken(token, "Expected tag")
 	}
 	val, ok := prs.tags[token.Literal]
 	if !ok {
-		ShowErrorf("Expected tag %s to be defined", token.Literal)
+		ShowErrorTokenf(token, "Expected tag %s to be defined", token.Literal)
 	}
 	prs.emitMemory(Token{
 		Literal:   val,
@@ -156,10 +159,13 @@ func (prs Parser) emitTag(token Token) {
 func (prs Parser) emitRegister(token Token) {
 	integer, err := strconv.Atoi(token.Literal)
 	if err != nil {
-		ShowErrorf("Expected register number, got %s", token)
+		ShowErrorTokenf(token, "Error while decoding as number literal: %s", token.Literal)
 	}
-	fixed := fmt.Sprintf("%02d", integer)
-	prs.emitHex(fixed, 1)
+	if integer >= 256 {
+		ShowErrorToken(token, "Integer must be under 256")
+	}
+	b := byte(integer & 0xff)
+	prs.emitBytes(b)
 }
 
 func (prs Parser) emitMemory(token Token) {
@@ -169,7 +175,7 @@ func (prs Parser) emitMemory(token Token) {
 func (prs Parser) emitHex(literal string, length int) {
 	address, err := hex.DecodeString(literal)
 	if err != nil {
-		ShowErrorf("Error while decoding as hexadecimal literal in emitHex: %s", literal)
+		ShowErrorf("Error while decoding as hexadecimal literal in emitHex: %s, %s", literal, err)
 	}
 	if len(address) != length {
 		ShowErrorf("Expected hexadecimal to be %d length", length)

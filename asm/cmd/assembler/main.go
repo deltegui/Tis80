@@ -19,16 +19,19 @@ func generateOutputFile(inputPath string) string {
 	return strings.Replace(inputPath, ".asm", ".rom", 1)
 }
 
+func scannerFromFile(file *os.File) tisasm.Scanner {
+	return tisasm.NewFileScanner(bufio.NewReader(file))
+}
+
 func main() {
 	path := getSourcePath()
 	file := tisasm.OpenFile(path)
 	defer file.Close()
 	outputFile := tisasm.CreateFile(generateOutputFile(path))
 	defer outputFile.Close()
-	scn := tisasm.NewFileScanner(bufio.NewReader(file))
-	tagReader := tisasm.NewTagReader(scn)
+	tagReader := tisasm.NewTagReader(scannerFromFile(file))
 	tags := tagReader.GetTags()
 	file.Seek(0, 0)
-	parser := tisasm.NewParser(scn, outputFile, tags)
+	parser := tisasm.NewParser(scannerFromFile(file), outputFile, tags)
 	parser.Parse()
 }

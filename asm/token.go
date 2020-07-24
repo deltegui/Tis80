@@ -8,6 +8,7 @@ import (
 type Token struct {
 	TokenType TokenType
 	Literal   string
+	Line      int
 }
 
 type TokenType string
@@ -19,6 +20,7 @@ const (
 	TokenMemory      TokenType = "TokenMemory"
 	TokenSection     TokenType = "TokenSection"
 	TokenNumber      TokenType = "TokenNumber"
+	TokenHex         TokenType = "TokenHex"
 	TokenString      TokenType = "TokenString"
 	TokenInstruction TokenType = "TokenInstruction"
 	TokenError       TokenType = "TokenError"
@@ -53,11 +55,11 @@ func (token Token) AsInstruction() Instruction {
 	lowerCase := strings.ToLower(token.Literal)
 	instruction, err := GetInstruction(lowerCase)
 	if err != nil {
-		ShowErrorf("Getting instruction size of undefined instruction: %s", token.Literal)
+		ShowErrorTokenf(token, "Getting instruction size of undefined instruction: '%s',", token.Literal)
 	}
 	return instruction
 }
 
 func (token Token) String() string {
-	return fmt.Sprintf("[%s] %s\n", token.TokenType, token.Literal)
+	return fmt.Sprintf("[%s] '%s' at line %d\n", token.TokenType, token.Literal, token.Line)
 }
