@@ -28,6 +28,11 @@ func paramsJump(prs Parser) {
 	prs.emitJumpDest(prs.scanner.Scan())
 }
 
+func paramsJumpJump(prs Parser) {
+	prs.emitJumpDest(prs.scanner.Scan())
+	prs.emitJumpDest(prs.scanner.Scan())
+}
+
 func paramsJumpRegister(prs Parser) {
 	prs.emitJumpDest(prs.scanner.Scan())
 	prs.emitRegister(prs.scanner.Scan())
@@ -75,6 +80,12 @@ func diassembleNumber(dasm Diassembler) {
 }
 
 func diassembleJump(dasm Diassembler) {
+	dasm.readMemory()
+}
+
+func diassembleJumpJump(dasm Diassembler) {
+	dasm.readMemory()
+	fmt.Print(" ")
 	dasm.readMemory()
 }
 
@@ -305,7 +316,7 @@ var instructions []Instruction = []Instruction{
 	{
 		Literal:     "inr", // Read indirection. Reads the byte that points the memory stored in MEM
 		OpCode:      0x36,
-		TokenSize:   2,
+		TokenSize:   3,
 		MemorySize:  4,
 		ParseParams: paramsJumpRegister,
 		Diassemble:  diassembleJumpRegister,
@@ -313,8 +324,8 @@ var instructions []Instruction = []Instruction{
 	{
 		Literal:     "inw", // Write indirection. Writes the byte that points the memory stored in MEM
 		OpCode:      0x37,
-		TokenSize:   2,
-		MemorySize:  3,
+		TokenSize:   3,
+		MemorySize:  4,
 		ParseParams: paramsRegisterJump,
 		Diassemble:  diassembleRegisterJump,
 	},
@@ -325,6 +336,14 @@ var instructions []Instruction = []Instruction{
 		MemorySize:  3,
 		ParseParams: paramsJump,
 		Diassemble:  diassembleJump,
+	},
+	{
+		Literal:     "movm", // Write two bytes into destiny direction and the next one
+		OpCode:      0x39,
+		TokenSize:   3,
+		MemorySize:  5,
+		ParseParams: paramsJumpJump,
+		Diassemble:  diassembleJumpJump,
 	},
 
 	// Llamadas 0x4

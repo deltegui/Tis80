@@ -30,10 +30,16 @@ func (scn *FileScanner) skipWhitespaces() {
 			scn.consume()
 		case ';':
 			scn.consumeUntil('\n')
+			scn.line++
 		default:
 			return
 		}
 	}
+}
+
+func (scn FileScanner) isCurrentWhitespace() bool {
+	c := scn.current()
+	return c == '\n' || c == ' ' || c == '\t' || c == '\r'
 }
 
 func (scn FileScanner) consumeUntil(end rune) {
@@ -92,7 +98,7 @@ func (scn FileScanner) isLetter() bool {
 		return false
 	}
 	c := scn.current()
-	return unicode.IsLetter(c) && c != '"'
+	return (unicode.IsLetter(c) || c == '_') && c != '"'
 }
 
 func (scn FileScanner) isInstruction() bool {
@@ -191,7 +197,7 @@ func (scn FileScanner) scanRegister() Token {
 		ShowError("Expected register to start with 'R' or 'r'")
 	}
 	scn.consume()
-	if scn.current() != '\n' && scn.current() != ' ' {
+	if !scn.isCurrentWhitespace() {
 		scn.consume()
 	}
 	return scn.createToken(TokenRegister)
@@ -199,7 +205,7 @@ func (scn FileScanner) scanRegister() Token {
 
 func (scn FileScanner) scanTag() Token {
 	scn.skipExpected(':', "Expected ':' before tag")
-	for !scn.isAtEnd() && scn.current() != '\n' {
+	for !scn.isCurrentWhitespace() {
 		scn.consume()
 	}
 	return scn.createToken(TokenTag)

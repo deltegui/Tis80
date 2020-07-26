@@ -50,6 +50,7 @@
 #define OP_INR	0x36
 #define OP_INW	0x37
 #define OP_DSK	0x38
+#define OP_MOVM 0x39
 #define OP_INT	0x40
 #define OP_HLT	0x41
 #define OP_CLL	0x42
@@ -102,11 +103,14 @@ void dispatch_interruption(Interruption interruption) {
 		return;
 	}
 	uint16_t dir_int = (uint16_t)interruption * 2;
-	uint16_t dir = read_memory_from(dir_int);
-	if(dir == 0x0000) {
+	if(dir_int >= INIT_PARAMS) {
 		return;
 	}
-	call_subrutine(dir);
+	uint16_t subrutine = read_memory_from(dir_int);
+	if(subrutine == 0x0000) {
+		return;
+	}
+	call_subrutine(subrutine);
 }
 
 void write_byte(uint16_t direction, uint8_t data) {
@@ -440,7 +444,7 @@ inline TisErr cpu_execute_instruction() {
 		uint8_t r = read_pc();
 		uint16_t direction = read_memory();
 		cpu.memory[direction] = get_register(r);
-		printf("[SIR]\n");
+		printf("[STR]\n");
 		break;
 	}
 	case OP_MOV: {
@@ -460,7 +464,7 @@ inline TisErr cpu_execute_instruction() {
 	case OP_TAR: {
 		uint8_t r = read_pc();
 		set_register(r, cpu.acc);
-		printf("[ADD]\n");
+		printf("[TAR]\n");
 		break;
 	}
 	case OP_TRA: {
@@ -491,6 +495,16 @@ inline TisErr cpu_execute_instruction() {
 			set_flag(FLAG_IO_ERROR);
 		}
 		printf("[DSK]\n");
+		break;
+	}
+	case OP_MOVM: {
+		uint16_t direction_to_store = read_memory();
+		uint16_t destiny = read_memory();
+		uint8_t high, low;
+		from_direction(direction_to_store, &high, &low);
+		write_byte(destiny, high);
+		write_byte(destiny + 1, low);
+		printf("[MOVM]\n");
 		break;
 	}
 	case OP_CLL: {
