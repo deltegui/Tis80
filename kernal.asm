@@ -8,13 +8,16 @@ $5000 "Hello world Hello world Hello world Hello world Hello world Hello world H
 	movm io_error $0004
 	movm strcpy $0006
 
-:main
+	; Example part. This should copy the string stored in $5000 and copy it to $3000
 	movm $5000 $0100
 	movm $3000 $0102
-	int 3
+	int 3 				; call strcpy (interruption 3)
 	pmd
 	hlt
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	ACC Overflow Interruption	;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :overflow_int
 	din
 	movi 0xee R1
@@ -22,6 +25,9 @@ $5000 "Hello world Hello world Hello world Hello world Hello world Hello world H
 	ein
 	crn
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	 Stack Overflow Interruption	;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :stack_overflow_int
 	din
 	movi 0xe1 R1
@@ -29,6 +35,9 @@ $5000 "Hello world Hello world Hello world Hello world Hello world Hello world H
 	ein
 	crn
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;    I/O Error Interruption    ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :io_error
 	din
 	movi 0xe2 R2
@@ -36,6 +45,9 @@ $5000 "Hello world Hello world Hello world Hello world Hello world Hello world H
 	ein
 	crn
 
+;;;;;;;;;;;;;;;;;;;;;
+;    String Copy    ;
+;;;;;;;;;;;;;;;;;;;;;
 :strcpy
 	din
 	; Copies a string stored in indirection $0100 to the direction stored in $0102
