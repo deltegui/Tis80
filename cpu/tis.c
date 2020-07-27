@@ -16,10 +16,14 @@ void free_tis() {
 	free_cpu();
 }
 
-void print_status() {
-	print_cpu_status();
-}
-
 TisErr execute_instruction() {
 	return cpu_execute_instruction();
+}
+
+CpuStatus* get_status() {
+	return get_cpu_status();
+}
+
+void free_status(CpuStatus* status) {
+	free_cpu_status(status);
 }

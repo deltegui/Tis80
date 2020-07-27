@@ -53,6 +53,38 @@ void close_rom() {
 	init_rom();
 }
 
+void print_status(CpuStatus* status) {
+	printf("------TIS 80 CPU STATUS-----\n");
+	printf("\n");
+	printf("ACC register: %02x\n", status->acc);
+	printf("\n");
+	for(int i = 0; i < 16; i++) {
+		printf("R%d: %02x\n", i, status->registers[i]);
+	}
+	printf("\n");
+	printf("Protected Mode: %d\n", status->protected_mode);
+	printf("Enabled Interruptions: %d\n", status->enabled_interruptions);
+	printf("Overflow: %d\n", status->flags[FLAG_ACC_OVERFLOW]);
+	printf("Stack Overflow: %d\n", status->flags[FLAG_STACK_OVERFLOW]);
+	printf("IO error: %d\n", status->flags[FLAG_IO_ERROR]);
+	printf("\n");
+	printf("\n");
+	for(int i = 0; i < MEMORY_LENGTH; i++) {
+		if(i % 16 == 0) {
+			printf("\n $%04x:", i);
+		}
+		printf(" %02x", status->memory[i]);
+	}
+	printf("\n");
+}
+
+void print_screen(CpuStatus* status) {
+	uint8_t* init_screen = &status->memory[INIT_VID_MEM];
+	status->memory[INIT_KEYBOARD_BUFFER - 1] = '\0';
+	printf("------------OUTPUT-----------\n");
+	printf("%s\n", init_screen);
+}
+
 int main() {
 	RomReader reader = {
 		.open = &open_rom,
@@ -74,7 +106,10 @@ int main() {
 		free_tis();
 		return 1;
 	}
-	print_status();
+	CpuStatus* status = get_status();
+	print_status(status);
+	print_screen(status);
+	free_status(status);
 	free_tis();
 	return 0;
 }

@@ -1,29 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "cpu.h"
 #include "loader.h"
 #include "error.h"
 
 #define UINT8_COUNT (UINT8_MAX + 1) 
-
-#define REGISTER_MIN 0
-#define REGISTER_MAX 15
-
-#define MEMORY_LENGTH 65536
-
-#define INIT_INT				0x0000
-#define INIT_PARAMS				0x0100
-#define INIT_STACK 				0x0104
-#define INIT_KERNAL_ROM 		0x0200
-#define INIT_VID_MEM			0x3000
-#define INIT_KEYBOARD_BUFFER	0x4000
-#define INIT_RAM 				0x4100
-
-#define FLAG_COUNT 3
-
-#define FLAG_ACC_OVERFLOW 	0
-#define FLAG_STACK_OVERFLOW 1
-#define FLAG_IO_ERROR 		2
 
 #define OP_ADD	0x01
 #define OP_ADDI 0x02
@@ -308,28 +290,27 @@ static void clear_flag_from_code(uint8_t code) {
 	}
 }
 
-void print_cpu_status() {
-	printf("------TIS 80 CPU STATUS-----\n");
-	printf("\n");
-	printf("ACC register: %02x\n", cpu.acc);
-	printf("\n");
-	for(int i = 0; i < 16; i++) {
-		printf("R%d: %02x\n", i, cpu.registers[i]);
+CpuStatus* get_cpu_status() {
+	CpuStatus *status = (CpuStatus*)malloc(sizeof(CpuStatus));
+	size_t memory_size = sizeof(uint8_t)*MEMORY_LENGTH;
+	status->memory = (uint8_t*)malloc(memory_size);
+	memcpy(status->memory, cpu.memory, memory_size);
+	memcpy(status->registers, cpu.registers, REGISTER_MAX);
+	status->acc = cpu.acc;
+	status->pc = (uint16_t)(cpu.memory - cpu.pc);
+	status->stack_top = (uint16_t)(cpu.memory - cpu.pc);
+	status->halt = cpu.halt;
+	status->protected_mode = cpu.protected_mode;
+	status->enabled_interruptions = cpu.enabled_interruptions;
+	for(int i = 0; i < FLAG_COUNT; i++) {
+		status->flags[i] = cpu.flags[i];
 	}
-	printf("\n");
-	printf("Protected Mode: %d\n", cpu.protected_mode);
-	printf("Enabled Interruptions: %d\n", cpu.enabled_interruptions);
-	printf("Overflow: %d\n", cpu.flags[FLAG_ACC_OVERFLOW]);
-	printf("Stack Overflow: %d\n", cpu.flags[FLAG_STACK_OVERFLOW]);
-	printf("IO error: %d\n", cpu.flags[FLAG_IO_ERROR]);
-	printf("\n");
-	printf("\n");
-	for(int i = 0; i < MEMORY_LENGTH; i++) {
-		if(i % 16 == 0) {
-			printf("\n $%04x:", i);
-		}
-		printf(" %02x", cpu.memory[i]);
-	}
+	return status;
+}
+
+void free_cpu_status(CpuStatus* status) {
+	free(status->memory);
+	free(status);
 }
 
 inline TisErr cpu_execute_instruction() {
