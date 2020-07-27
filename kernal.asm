@@ -1,5 +1,5 @@
 .data
-$5000 "Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world"
+$4100 "user.rom"
 
 .code $0200
 	; Register all interruptions
@@ -8,11 +8,10 @@ $5000 "Hello world Hello world Hello world Hello world Hello world Hello world H
 	movm io_error $0004
 	movm strcpy $0006
 
-	; Example part. This should copy the string stored in $5000 and copy it to $3000
-	movm $5000 $0100
-	movm $3000 $0102
-	int 3 				; call strcpy (interruption 3)
+	; Call user code stored in $4100
+	dsk $4100
 	pmd
+	cll $4100
 	hlt
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
