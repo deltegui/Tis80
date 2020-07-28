@@ -5,7 +5,7 @@
 #include "loader.h"
 #include "error.h"
 
-#define UINT8_COUNT (UINT8_MAX + 1) 
+#define UINT8_COUNT (UINT8_MAX + 1)
 
 #define OP_ADD	0x01
 #define OP_ADDI 0x02
@@ -108,6 +108,7 @@ uint8_t read_byte(uint16_t direction) {
 static void stack_push(uint8_t value) {
 	uint16_t next_pos = (uint16_t)(cpu.stack_top - cpu.memory) + 1;
 	if(next_pos >= INIT_KERNAL_ROM) {
+		cpu.stack_top = (uint8_t*)(cpu.memory + INIT_STACK);
 		set_flag(FLAG_STACK_OVERFLOW);
 		return;
 	}

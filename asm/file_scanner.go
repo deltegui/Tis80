@@ -107,7 +107,7 @@ func (scn FileScanner) isInstruction() bool {
 
 func (scn FileScanner) isRegister() bool {
 	c := scn.current()
-	return c == 'r' || c == 'R'
+	return c == 'R'
 }
 
 func (scn FileScanner) scanNumber() Token {

@@ -73,6 +73,7 @@ El Tis80 tiene un rango de direcciones de 64K. La palabra de memoria es de 8 bit
 * __Números en decimal__: Cualquier número del 1 al 255 (los números están limitados a 8 bits). Si se quiere escribir el 0 en decimal, se debe hacer usando la notación hexadecimal.
 * __Tags__: Son equivalentes a las direcciones de memoria. Útiles para destinos de saltos. Se declaran con dos puntos (por ejemplo :destino). Se usan escribiendo el nombre de la tag sin los dos puntos (por ejemplo **jmp destino**). Se tranforman en direcciones fijas cuando se ensambla.
 * __Comentarios__: Comienzan con punto y coma (;) y terminan al final de la línea.
+* __Registros__: Comienzan con R (R mayúscula, no puede ser minúscula) seguido por un número entre el 0 y el 15 (ambos inclusive).
 
 ### Secciones
 Una sección es una parte del código ensamblador dedicada para indicar información de distinto tipo al emulador. Existen dos secciones:
