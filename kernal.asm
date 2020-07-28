@@ -1,12 +1,13 @@
 .data
 $4100 "user.rom"
+$4500 "Fatal error: Stack overflow"
 
 .code $0200
 	; Register all interruptions
 	movm overflow_int $0000
 	movm stack_overflow_int $0002
 	movm io_error $0004
-	movm strcpy $0006
+	movm strcpy $0008
 
 	; Call user code stored in $4100
 	dsk $4100
@@ -18,10 +19,6 @@ $4100 "user.rom"
 ;	ACC Overflow Interruption	;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :overflow_int
-	din
-	movi 0xee R1
-	str R1 $ffff
-	ein
 	crn
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,19 +26,15 @@ $4100 "user.rom"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :stack_overflow_int
 	din
-	movi 0xe1 R1
-	str R1 $ffff
-	ein
-	crn
+	movm $4500 $0100
+	movm $3000 $0102
+	cll strcpy
+	hlt
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;    I/O Error Interruption    ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 :io_error
-	din
-	movi 0xe2 R2
-	str R2 $fffd
-	ein
 	crn
 
 ;;;;;;;;;;;;;;;;;;;;;
