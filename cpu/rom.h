@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 // Rom reader is an interface-like struct that lets TisCpu to
 // handle external ROM files.

@@ -2,6 +2,7 @@
 #define tiscpu_cpu_h
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "error.h"
 
 #define REGISTER_MIN 0

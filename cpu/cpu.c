@@ -65,7 +65,9 @@ typedef struct {
 Cpu cpu;
 
 void init_cpu() {
-	cpu.memory = (uint8_t*)malloc(sizeof(uint8_t)*MEMORY_LENGTH);
+	size_t mem_size = sizeof(uint8_t)*MEMORY_LENGTH;
+	cpu.memory = (uint8_t*)malloc(mem_size);
+	memset(cpu.memory, 0, mem_size);
 	cpu.pc = cpu.memory + INIT_KERNAL_ROM;
 	cpu.stack_top = cpu.memory + INIT_STACK;
 	cpu.halt = false;
@@ -151,7 +153,6 @@ static uint8_t read_pc() {
 }
 
 static char* read_string(uint16_t direction) {
-	printf("Reading string from %04lx: %s\n", direction, (char*)(cpu.memory + direction));
 	return (char*)(cpu.memory + direction);
 }
 
@@ -169,7 +170,9 @@ static void from_direction(uint16_t direction, uint8_t* high, uint8_t* low) {
 }
 
 static uint16_t read_memory() {
-	return to_direction(read_pc(), read_pc());
+	uint8_t high = read_pc();
+	uint8_t low = read_pc();
+	return to_direction(high, low);
 }
 
 static uint16_t read_memory_from(uint16_t direction) {
@@ -265,7 +268,7 @@ static void set_flag(uint8_t code) {
 		cpu.flags[code] = true;
 	}
 	switch(code) {
-	case FLAG_IO_ERROR: 
+	case FLAG_IO_ERROR:
 		dispatch_interruption(IO_ERROR_INT);
 		break;
 	case FLAG_STACK_OVERFLOW:

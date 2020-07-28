@@ -16,4 +16,4 @@ console: folder
 	gcc ./console/*.c ./cpu/*.c -o ./build/tisconsole
 
 tis: folder
-	gcc -lSDL2 -lSDL2_ttf ./screen/*.c ./cpu/*.c -o ./build/tis
+	gcc ./screen/*.c ./cpu/*.c -o ./build/tis -L/usr/local/lib -lSDL2 -lSDL2_ttf

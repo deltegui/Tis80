@@ -86,10 +86,12 @@ void loop() {
 			break;
 		}
 		if(err == ErrExecEnd && not_first) {
+			clear_screen();
 			CpuStatus* status = get_status();
 			print_text_screen(get_video_string(status));
 			free_status(status);
 			not_first = false;
+			present_screen();
 		}
 	}
 	print_status();
@@ -106,7 +108,6 @@ int main() {
 	}
 
 	loop();
-
 	end_tis();
 	free_screen();
 	close_drive();

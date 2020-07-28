@@ -40,6 +40,8 @@ uint8_t read_drive() {
 }
 
 void close_drive() {
-	fclose(drive.file);
+	if(drive.file != NULL) {
+		fclose(drive.file);
+	}
 	init_drive();
 }

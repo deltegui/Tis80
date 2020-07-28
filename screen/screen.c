@@ -53,10 +53,10 @@ bool init_screen() {
 }
 
 void free_screen() {
-    SDL_DestroyWindow(screen.window);
-    SDL_DestroyRenderer(screen.renderer);
     TTF_CloseFont(screen.font);
-	TTF_Quit();
+    SDL_DestroyRenderer(screen.renderer);
+    SDL_DestroyWindow(screen.window);
+    TTF_Quit();
 	SDL_Quit();
 }
 
@@ -90,11 +90,17 @@ static void print_letter(char letter) {
 }
 
 void print_text_screen(char* text) {
-    SDL_RenderClear(screen.renderer);
     printf("Print text: %s\n", text);
     int len = strlen(text);
     for(int i = 0; i < len; i++) {
         print_letter(text[i]);
     }
+}
+
+void clear_screen() {
+    SDL_RenderClear(screen.renderer);
+}
+
+void present_screen() {
     SDL_RenderPresent(screen.renderer);
 }
