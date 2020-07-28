@@ -1,3 +1,4 @@
+![Tis80](https://github.com/deltegui/Tis80/blob/master/nuevotis80.png "Tis80")
 # TIS 80
 Tis80 es un pequeño y simple emulador de un *"fantasy computer"*. Un *"fantasy computer"* es, como su nombre indica, un ordenador ficticio, normalmente retro (de 8 bits, estilo Commodore64, por ejemplo). No es una [*"fantasy console"*](https://github.com/topics/fantasy-console) como el Pico8 o el Tic8. El objetivo de este emulador es solo emular el comportamiento una máquina de 8 bits. No es una consola de videojuegos.
 
