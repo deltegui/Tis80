@@ -104,7 +104,7 @@ uint8_t read_byte(uint16_t direction) {
 }
 
 static void stack_push(uint8_t value) {
-	uint16_t next_pos = (uint16_t)cpu.stack_top + 1;
+	uint16_t next_pos = (uint16_t)(cpu.stack_top - cpu.memory) + 1;
 	if(next_pos >= INIT_KERNAL_ROM) {
 		set_flag(FLAG_STACK_OVERFLOW);
 		return;
@@ -114,7 +114,7 @@ static void stack_push(uint8_t value) {
 }
 
 static uint8_t stack_pop() {
-	uint16_t current_pos = (uint16_t)cpu.stack_top;
+	uint16_t current_pos = (uint16_t)(cpu.stack_top - cpu.memory);
 	if(current_pos > INIT_STACK) {
 		cpu.stack_top--;
 	}
@@ -297,8 +297,8 @@ CpuStatus* get_cpu_status() {
 	memcpy(status->memory, cpu.memory, memory_size);
 	memcpy(status->registers, cpu.registers, REGISTER_MAX);
 	status->acc = cpu.acc;
-	status->pc = (uint16_t)(cpu.memory - cpu.pc);
-	status->stack_top = (uint16_t)(cpu.memory - cpu.pc);
+	status->pc = (uint16_t)(cpu.pc - cpu.memory);
+	status->stack_top = (uint16_t)(cpu.stack_top - cpu.memory);
 	status->halt = cpu.halt;
 	status->protected_mode = cpu.protected_mode;
 	status->enabled_interruptions = cpu.enabled_interruptions;

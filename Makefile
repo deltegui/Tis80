@@ -1,4 +1,4 @@
-all: assembler diassembler tis
+all: assembler diassembler console tis
 
 assembler: folder
 	cd ./asm && go build -o ../build/tisasm ./cmd/assembler/main.go && cd ..
@@ -12,5 +12,8 @@ folder:
 clean:
 	rm -rf build
 
+console: folder
+	gcc ./console/*.c ./cpu/*.c -o ./build/tisconsole
+
 tis: folder
-	gcc ./console/*.c ./cpu/*.c -o ./build/tis
+	gcc -lSDL2 -lSDL2_ttf ./screen/*.c ./cpu/*.c -o ./build/tis
