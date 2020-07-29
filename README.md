@@ -1,6 +1,6 @@
 ![Tis80](https://github.com/deltegui/Tis80/blob/master/nuevotis80.png "Tis80")
 # TIS 80
-Tis80 es un pequeño y simple emulador de un *"fantasy computer"*. Un *"fantasy computer"* es, como su nombre indica, un ordenador ficticio, normalmente retro (de 8 bits, estilo Commodore64, por ejemplo). No es una [*"fantasy console"*](https://github.com/topics/fantasy-console) como el Pico8 o el Tic8. El objetivo de este emulador es solo emular el comportamiento una máquina de 8 bits. No es una consola de videojuegos.
+Tis80 es un pequeño y simple emulador de un *"fantasy computer"*. Un *"fantasy computer"* es, como su nombre indica, un ordenador ficticio, normalmente retro (de 8 bits, estilo Commodore64, por ejemplo). No es una [*"fantasy console"*](https://github.com/topics/fantasy-console) como el Pico8 o el Tic8. El objetivo de este proyecto es solo emular el comportamiento una máquina de 8 bits muy por encima, solo como diversión. No es una consola de videojuegos.
 
 ## Roadmap
 Aunque el proyecto ha cumplido el objetivo que me había propuesto, puede que se añadan las siguientes características:
@@ -21,7 +21,7 @@ El proyecto se divide en:
 
 * __Una implementación de consola__: Una versión para usar en la shell. Está en el directorio *"console"*.
 
-* __Una implementación gráfica__: Por el momento muy limitada. Es exactamente igual que la versión de consola con la diferencia que en esta versión aparece una ventana de 320x200 píxeles donde se muestra el contienido de la memoria de vídeo del emulador. Se encuentra en *"screen"*.
+* __Una implementación gráfica__: Es exactamente igual que la versión de consola con la diferencia que en esta versión aparece una ventana de 320x200 píxeles donde se muestra el contienido de la memoria de vídeo del emulador. Se encuentra en *"screen"*.
 
 ## Compilación
 Para compilar el proyecto necesitas:
@@ -45,7 +45,7 @@ El Tis80 se trata de un ordenador de 8 bits, con un rango de direcciones de 64K 
     * El contenido del acumulador es 0xFFFF y se suma uno o más.
     * El contenido del acumulador es 0x0000 y se resta uno o más.
 * STACK_OVERFLOW [1]: Identificado como la flag 1. Se ha intentado hacer un push en el stack cuando ya se ha alcanzado el límite.
-* IO_ERROR [2]: Identificado como la flag 2. Se ha intentado leer/escribir en un floppy-disk y no ha sido posible.
+* IO_ERROR [2]: Identificado como la flag 2. Se ha intentado leer/escribir en un floppy-disk (realmente un fichero binario) y no ha sido posible.
 
 Todos estos flags, cuando se activan, generan una interrupción.
 
@@ -65,9 +65,9 @@ El Tis80 tiene un rango de direcciones de 64K. La palabra de memoria es de 8 bit
 | $4100 - $FFFF | RAM (memoria para los programas del usuario)                                                                                                                                                                                                                                       |
 
 ## Ensamblador del Tis80
-### Tipos de datos
+### Conceptos generales
 
-* __Secciones__: son un punto seguido de un texto. Solo hay dos: *.data* y *.code*.
+* __Secciones__: son un punto seguido de un texto. Sólo hay dos: *.data* y *.code*.
 * __Strings__: Son unas comillas dobles, seguidas de un texto y terminadas en unas comillas dobles. Solo pueden aparecer en la sección de datos. Por ejemplo: "Hola" o "Bienvenido al Tis80".
 * __Números en hexadecimal__: Es cualquier número que empieza por un 0, seguido por una x, continuado por un número hexadecimal (es decir, se admite dígitos y las letras 'a', 'b', 'c', 'd', 'e' y 'f' tanto en minusculas como mayusculas).
 * __Números en decimal__: Cualquier número del 1 al 255 (los números están limitados a 8 bits). Si se quiere escribir el 0 en decimal, se debe hacer usando la notación hexadecimal.
@@ -116,7 +116,7 @@ Movimiento
 | movi INT Rx | 0x33 | INT -> Rx | Copia el número INT al registro Rx |
 | tar RX | 0x34 | ACC -> Rx | Copia el contenido de ACC a Rx |
 | tra Rx | 0x35 | Rx -> ACC | Copia el contenido de Rx a ACC |
-| inr MEM Rx | 0x36 | memory[$MEM, $MEM+1] -> Rx | Lee la indirección guardada en MEM y la guarda en Rx. Es decir, tenemos en la dirección $4000 el byte 0x31 y en la dirección $4001 el byte 0xb1. Además en la dirección $31b1 tenemos el byte 0xff. Si ejecutamos *inr $4000 R0* estaríamos leyendo las direcciones $4000 y $4001 y buscando en la dirección guardada ahí (en nuestro caso $31b1) para obtener el byte que se guardará en R0. Por lo que al final de esta operación, R0 tendra 0xff. |
+| inr MEM Rx | 0x36 | memory[$MEM, $MEM+1] -> Rx | Lee la indirección guardada en MEM y la guarda en Rx. Por ejemplo, tenemos en la dirección $4000 el byte 0x31 y en la dirección $4001 el byte 0xb1. Además en la dirección $31b1 tenemos el byte 0xff. Si ejecutamos *inr $4000 R0* estaríamos leyendo las direcciones $4000 y $4001 y buscando en la dirección guardada ahí (en nuestro caso $31b1) para obtener el byte que se guardará en R0. Por lo que al final de esta operación, R0 tendrá 0xff. |
 | inw Rx MEM | 0x37 | Rx -> memory[$MEM, $MEM+1] | Operación contraria a inr. Guarda el contenido de Rx en la indirección MEM |
 | dsk MEM | 0x38 |  | Lee el string guardado en la direccion MEM y lo usa para cargar el fichero binario (rom) con ese nombre. |
 | movm MEM0 MEM1 | 0x39 |  | Guarda los dos bytes de MEM0 en MEM1 y MEM1 + 1. |
@@ -143,7 +143,7 @@ Stack
 
 ### Ensablado / Desensamblado
 
-Para _"compilar" (ensamblar)_ tu código debes ejecutar tisasm pasando como parámetro el fichero asm que quieras. Puedes desenamblar un binario con el programa tisdiasm y pasando com parámetro la rom.
+Para _"compilar" (ensamblar)_ tu código debes ejecutar tisasm pasando como parámetro el fichero asm que quieras. Puedes desenamblar un binario con el programa tisdiasm y pasando como parámetro la rom.
 
 Por ejemplo, tenemos este código de usuario:
 
@@ -177,7 +177,7 @@ tisasm ./kernal.asm
 
 Dejando en el mismo directorio un fichero binario llamado "user.rom".
 
-Para desenamblar se hace con la herramienta tisdiasm
+Para desensamblar se hace con la herramienta tisdiasm
 
 ```
 tisasm ./user.rom
@@ -208,6 +208,6 @@ Como se puede observar, el código no es exatamente el mismo. Hay unos comentari
 Al iniciar el emulador, lo primero que hace es buscar el binario del kernel, que se debe llamar __kernal.rom__. Hecho esto, lo carga en memoria y comienza a ejecutar las instrucciones a partir de la dirección $0200 (por lo que la sección de código del kernel debe comenzar en esa posición). A partir de este punto se deja completamente el emulador al control del desarrollador del kernel.
 
 ## Kernel por defecto
-Tienes un pequeño y simple kernel en el fichero *kernel.asm* Asigna algunas interrupciones y te da algunas funcionalidades como la interrupción 4 (strcpy, lee el string de la indirección $0100 y lo deja en la indirección $0102). Además, espera que tu programa se llame *user.rom* y lo ejecuta. Este kernel es usado para el ejemplo de arriba.
+Tienes un pequeño y simple kernel en el fichero *kernel.asm* Asigna algunas interrupciones y te da algunas funcionalidades como la interrupción 4 (strcpy, lee el string de la indirección $0100 y lo deja en la indirección $0102). Además, espera que tu programa se llame *user.rom*, lo carga en la dirección $4100 y lo ejecuta. Este kernel es usado para el ejemplo de arriba.
 
 Aún así, si quieres puedes mejorar el kernel por defecto o crearte el tuyo propio.
